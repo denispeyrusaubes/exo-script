@@ -16,10 +16,10 @@ Les attaquants testent des chemins qui n'existent pas. Les erreurs 404 en masse 
 
 ```bash
 # Top des URLs qui retournent un 404
-awk '$9 == 404 {print $7}' access.log | sort | uniq -c | sort -rn | head -30
+awk '$9 == 404 {print $7}' calt.logs | sort | uniq -c | sort -rn | head -30
 
 # IPs qui generent le plus d'erreurs
-awk '$9 == 404 || $9 == 400 {print $1}' access.log | sort | uniq -c | sort -rn | head -20
+awk '$9 == 404 || $9 == 400 {print $1}' calt.logs | sort | uniq -c | sort -rn | head -20
 ```
 
 > En executant ces commandes, on decouvre naturellement des chemins comme `/GponForm/diag_Form`, `/setup.cgi`, `/phpmyadmin/`, etc.
@@ -30,7 +30,7 @@ Les bots et scanners utilisent des user-agents reconnaissables :
 
 ```bash
 # Top des user-agents
-awk -F'"' '{print $6}' access.log | sort | uniq -c | sort -rn | head -30
+awk -F'"' '{print $6}' calt.logs | sort | uniq -c | sort -rn | head -30
 ```
 
 > On decouvre ainsi des agents comme `Hakai/2.0`, `zgrab/0.x`, `libwww-perl`, `Go-http-client` qui sont souvent associes a des outils de scan ou des botnets.
@@ -41,7 +41,7 @@ Sur un site web classique, les POST legitimes sont limites a quelques endpoints.
 
 ```bash
 # Top des requetes POST
-grep "POST" access.log | awk -F'"' '{print $2}' | sort | uniq -c | sort -rn | head -20
+grep "POST" calt.logs | awk -F'"' '{print $2}' | sort | uniq -c | sort -rn | head -20
 ```
 
 ---
@@ -54,14 +54,14 @@ Les attaques laissent des traces syntaxiques reconnaissables dans les URLs. On p
 
 ```bash
 # Point-virgule, pipe, quote, backtick, dollar, chevrons (injection de commandes, XSS, SQLi)
-grep -i ";\||\|'\|\`\|\${\|\.\./\|<script" access.log | head -20
+grep -i ";\||\|'\|\`\|\${\|\.\./\|<script" calt.logs | head -20
 ```
 
 ### Commandes systeme dans les URLs
 
 ```bash
 # Presence de commandes shell dans les requetes
-grep -i "wget\|curl\|/bin/sh\|chmod\|rm -rf\|/tmp/" access.log | head -20
+grep -i "wget\|curl\|/bin/sh\|chmod\|rm -rf\|/tmp/" calt.logs | head -20
 ```
 
 ### Encodage URL suspect
@@ -78,14 +78,14 @@ Certains caracteres sont encodes pour contourner les filtres :
 
 ```bash
 # Recherche d'encodages suspects
-grep '%27\|%3B\|%3C\|%22\|%00' access.log | head -20
+grep '%27\|%3B\|%3C\|%22\|%00' calt.logs | head -20
 ```
 
 ### Path traversal
 
 ```bash
 # Tentatives de remonter l'arborescence
-grep '\.\.\/' access.log | head -20
+grep '\.\.\/' calt.logs | head -20
 ```
 
 ---
@@ -201,33 +201,33 @@ Le script `analyse_logs.sh` fourni dans ce repertoire automatise la detection. V
 
 ```bash
 # === STATISTIQUES GENERALES ===
-wc -l access.log                                              # Nombre de lignes
-awk '{print $1}' access.log | sort -u | wc -l                # IPs uniques
-awk '{print $9}' access.log | sort | uniq -c | sort -rn      # Codes HTTP
+wc -l calt.logs                                              # Nombre de lignes
+awk '{print $1}' calt.logs | sort -u | wc -l                # IPs uniques
+awk '{print $9}' calt.logs | sort | uniq -c | sort -rn      # Codes HTTP
 
 # === DETECTION D'ATTAQUES ===
 
 # Scan phpMyAdmin
-grep -ci 'phpmyadmin\|/pma\|phpmy' access.log
+grep -ci 'phpmyadmin\|/pma\|phpmy' calt.logs
 
 # Injection de commandes / Botnets
-grep -ci 'setup\.cgi.*cmd\|/shell?cd\|login\.cgi.*wget\|/bin/sh\|wget[+ ]' access.log
+grep -ci 'setup\.cgi.*cmd\|/shell?cd\|login\.cgi.*wget\|/bin/sh\|wget[+ ]' calt.logs
 
 # Exploit GPON Router
-grep -ci 'GponForm' access.log
+grep -ci 'GponForm' calt.logs
 
 # Brute-force WordPress
-grep -ci 'wp-login\|wp-admin' access.log
-grep -ci 'xmlrpc\.php' access.log
+grep -ci 'wp-login\|wp-admin' calt.logs
+grep -ci 'xmlrpc\.php' calt.logs
 
 # SQL Injection
-grep -ci "union.*select\|select.*from\|1=1\|information_schema" access.log
+grep -ci "union.*select\|select.*from\|1=1\|information_schema" calt.logs
 
 # Acces fichiers sensibles
-grep -ci '\.env\|wp-config\|/etc/passwd\|\.git/\|\.htaccess' access.log
+grep -ci '\.env\|wp-config\|/etc/passwd\|\.git/\|\.htaccess' calt.logs
 
 # Scanners automatises
-grep -ci 'zgrab\|nmap\|nikto\|masscan\|censys\|shodan\|sqlmap\|nuclei' access.log
+grep -ci 'zgrab\|nmap\|nikto\|masscan\|censys\|shodan\|sqlmap\|nuclei' calt.logs
 ```
 
 ---
